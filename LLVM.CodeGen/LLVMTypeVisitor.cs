@@ -14,13 +14,12 @@ namespace LLVM.CodeGen {
 		}
 
 		public override TypeDefinition Visit(CppSharp.AST.Type type) {
-			if (type is TypedefType typedef && typedef.Declaration.Name.StartsWith("LLVM")) {
-				if (typedef.Declaration is TypedefDecl { Name: "LLVMBool" }) {
-					return new TypeDefinition { Name = "bool" };
-				} else if (typedef.Declaration.Name.EndsWith("Ref")
-					&& typedef.Declaration.Type is PointerType pointerType
-					&& pointerType.Pointee is TagType tagType
-					&& tagType.Declaration is Class) {
+			if (type is TypedefType typedef) {
+				if (typedef.Declaration.Name.StartsWith("LLVM")
+				&& typedef.Declaration.Name.EndsWith("Ref")
+				&& typedef.Declaration.Type is PointerType pointerType
+				&& pointerType.Pointee is TagType tagType
+				&& tagType.Declaration is Class) {
 					if (!Processor.UnitsMap.ContainsKey(typedef.Declaration.Name)) {
 						Processor.AddUnit(new StructDefinition {
 							Name = typedef.Declaration.Name,
@@ -36,6 +35,9 @@ namespace LLVM.CodeGen {
 						});
 					}
 					return new TypeDefinition { Name = typedef.Declaration.Name };
+				}
+				if (typedef.Declaration.Name == "LLVMBool") {
+					return new TypeDefinition { Name = "bool" };
 				}
 			}
 			return null;

@@ -19,8 +19,14 @@ namespace Saar.CppSharp.Definitions {
 		public IList<ModifyType> Modifies { get; private set; } = Array.Empty<ModifyType>();
 
 		public TypeDefinition AddModify(ModifyType modify) {
-			if (Modifies.Count == 0) Modifies = new List<ModifyType>();
+			if (Modifies.IsReadOnly) Modifies = new List<ModifyType>(Modifies);
 			Modifies.Add(modify);
+			return this;
+		}
+
+		public TypeDefinition RemoveModify(int index) {
+			if (Modifies.IsReadOnly) Modifies = new List<ModifyType>(Modifies);
+			Modifies.RemoveAt(index);
 			return this;
 		}
 

@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Saar.CppSharp.Definitions {
-	public class DelegateDefinition : TypeDefinition, ICanGenerateXmlDoc {
+	public class DelegateDefinition : TypeDefinition, IFunctionDefinition, ICanGenerateXmlDoc {
 		public TypeDefinition ReturnType { get; set; }
 		public ParamDefinition[] Params { get; set; }
 		public string Content { get; set; }

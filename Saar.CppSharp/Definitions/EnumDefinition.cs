@@ -13,7 +13,7 @@ namespace Saar.CppSharp.Definitions {
 		public bool IsFlags { get; set; } = false;
 
 		public void AddItem(EnumItem item) {
-			if (Items is EnumItem[] array) Items = new List<EnumItem>(array);
+			if (Items.IsReadOnly) Items = new List<EnumItem>(Items);
 			Items.Add(item);
 		}
 	}

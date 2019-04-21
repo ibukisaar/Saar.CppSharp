@@ -117,6 +117,7 @@
     <Compile Include="Definitions\ICanGenerateXmlDoc.cs" />
     <Compile Include="Definitions\IDefinition.cs" />
     <Compile Include="Definitions\IField.cs" />
+    <Compile Include="Definitions\IFunctionDefinition.cs" />
     <Compile Include="Definitions\MacroDefinition.cs" />
     <Compile Include="Definitions\NamedDefinition.cs" />
     <Compile Include="Definitions\ParamDefinition.cs" />

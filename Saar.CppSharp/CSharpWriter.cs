@@ -72,6 +72,9 @@ namespace Saar.CppSharp {
 
 		public void WriteStruct(Definitions.StructDefinition @struct) {
 			WriteSummary(@struct);
+			if (@struct.Attrs.Count > 0) {
+				Writer.WriteLine($"[{string.Join(", ", @struct.Attrs)}]");
+			}
 			Writer.WriteLine("[StructLayout(LayoutKind.Sequential)]");
 			using (BeginBlock($"unsafe public struct {@struct.CSharpName} ")) {
 				foreach (var field in @struct.Fields) {
@@ -92,14 +95,7 @@ namespace Saar.CppSharp {
 		}
 
 		static string GetParamString(Definitions.ParamDefinition p, int i) {
-			string modify = p.Modify switch
-			{
-				Definitions.ParamDefinition.ModifyType.None => "",
-				Definitions.ParamDefinition.ModifyType.Out => "out ",
-				Definitions.ParamDefinition.ModifyType.Ref => "ref ",
-				Definitions.ParamDefinition.ModifyType.In => "in ",
-				_ => throw new InvalidOperationException(),
-			};
+			string modify = GetModifyString(p);
 			var sb = new StringBuilder();
 			if (p.Attrs.Length > 0) {
 				sb.Append($"[{string.Join(", ", p.Attrs)}] ");
@@ -109,7 +105,13 @@ namespace Saar.CppSharp {
 		}
 
 		static string GetArgString(Definitions.ParamDefinition p, int i) {
-			string modify = p.Modify switch
+			string modify = GetModifyString(p);
+			string paramName = !string.IsNullOrEmpty(p.CSharpName) ? NamedTool.VarName(p.CSharpName) : "p" + i;
+			return modify + paramName;
+		}
+
+		private static string GetModifyString(Definitions.ParamDefinition p) {
+			return p.Modify switch
 			{
 				Definitions.ParamDefinition.ModifyType.None => "",
 				Definitions.ParamDefinition.ModifyType.Out => "out ",
@@ -117,18 +119,12 @@ namespace Saar.CppSharp {
 				Definitions.ParamDefinition.ModifyType.In => "in ",
 				_ => throw new InvalidOperationException(),
 			};
-			string paramName = !string.IsNullOrEmpty(p.CSharpName) ? NamedTool.VarName(p.CSharpName) : "p" + i;
-			return modify + paramName;
 		}
 
 		public void WriteDelegate(Definitions.DelegateDefinition @delegate) {
-			void WriteAttrs() {
-				Writer.WriteLine("[SuppressUnmanagedCodeSecurity]");
-				Writer.WriteLine($"[UnmanagedFunctionPointer(CallingConvention.{@delegate.CallingConvention})]");
-				if (@delegate.ReturnAttrs.Length > 0) Writer.WriteLine($"return: [{string.Join(", ", @delegate.ReturnAttrs)}]");
-			}
-
-			WriteAttrs();
+			Writer.WriteLine("[SuppressUnmanagedCodeSecurity]");
+			Writer.WriteLine($"[UnmanagedFunctionPointer(CallingConvention.{@delegate.CallingConvention})]");
+			if (@delegate.ReturnAttrs.Length > 0) Writer.WriteLine($"[return: {string.Join(", ", @delegate.ReturnAttrs)}]");
 			if (!@delegate.InStruct) {
 				Writer.WriteLine($"unsafe public delegate {@delegate.ReturnType.CSharpName} {@delegate.CSharpName}({string.Join(", ", @delegate.Params.Select(GetParamString))});");
 			} else {

@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Saar.CppSharp.Definitions {
-	public class FunctionDefinition : NamedDefinition {
+	public class FunctionDefinition : NamedDefinition, IFunctionDefinition {
 		public string LibraryName { get; set; }
 		public bool IsConstLibraryName { get; set; }
 		public TypeDefinition ReturnType { get; set; }

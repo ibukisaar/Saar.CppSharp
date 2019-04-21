@@ -22,28 +22,28 @@ namespace LLVM.CodeGen {
 			}
 			g.ParseFinal();
 
-			using (var writer = new CSharpWriter(@"Z:\macro.cs")) {
-				using (writer.BeginClass("Constant")) {
-					writer.WriteMacros(g.Processor.Units);
-				}
-			}
-			using (var writer = new CSharpWriter(@"Z:\enum.cs", CSharpWriterConfig.GetDefaultEnumConfig("Saar"))) {
+			//using (var writer = new CSharpWriter(@"Z:\macro.cs", new CSharpWriterConfig { Namespace = "Saar.LLVM" })) {
+			//	using (writer.BeginClass("Constant")) {
+			//		writer.WriteMacros(g.Processor.Units);
+			//	}
+			//}
+			using (var writer = new CSharpWriter(@"Z:\LLVM.Enums.cs", CSharpWriterConfig.GetDefaultEnumConfig("Saar.LLVM"))) {
 				writer.WriteEnums(g.Processor.Units);
 			}
-			using (var writer = new CSharpWriter(@"Z:\struct.cs", CSharpWriterConfig.GetDefaultStructConfig("Saar"))) {
+			using (var writer = new CSharpWriter(@"Z:\LLVM.Structs.cs", CSharpWriterConfig.GetDefaultStructConfig("Saar.LLVM"))) {
 				writer.WriteStructs(g.Processor.Units);
 			}
-			using (var writer = new CSharpWriter(@"Z:\delegate.cs", CSharpWriterConfig.GetDefaultDelegateConfig("Saar"))) {
+			using (var writer = new CSharpWriter(@"Z:\LLVM.Delegates.cs", CSharpWriterConfig.GetDefaultDelegateConfig("Saar.LLVM"))) {
 				writer.WriteDelegates(g.Processor.Units);
 			}
-			using (var writer = new CSharpWriter(@"Z:\function.cs", CSharpWriterConfig.GetDefaultFunctionConfig("Saar"))) {
+			using (var writer = new CSharpWriter(@"Z:\LLVM.Functions.cs", CSharpWriterConfig.GetDefaultFunctionConfig("Saar.LLVM"))) {
 				using (writer.BeginClass("LLVM")) {
 					writer.WriteFunctions(g.Processor.Units);
 				}
 			}
-			using (var writer = new CSharpWriter(@"Z:\array.cs", CSharpWriterConfig.GetDefaultFixedArrayConfig("Saar"))) {
-				writer.WriteFixedArrays(g.Processor.Units);
-			}
+			//using (var writer = new CSharpWriter(@"Z:\array.cs", CSharpWriterConfig.GetDefaultFixedArrayConfig("Saar.LLVM"))) {
+			//	writer.WriteFixedArrays(g.Processor.Units);
+			//}
 		}
 	}
 }
