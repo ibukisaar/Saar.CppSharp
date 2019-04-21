@@ -10,10 +10,10 @@ using Saar.CppSharp.Processors;
 namespace LLVM.CodeGen {
 	public class LLVMVisitor : Saar.CppSharp.Visitor {
 		static readonly Regex hasWordRegex = new Regex(@"[a-z\d]", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
-		static readonly Regex getFunctionRegex = new Regex(@"^LLVM(Get|Parse|Create)", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
+		static readonly Regex getFunctionRegex = new Regex(@"^LLVM(Get|Parse|Create|Find)", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
 		static readonly Regex outParamRegex = new Regex(@"^Out[A-Z]", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
 		static readonly Regex errorRegex = new Regex(@"^(Out|Error)Message|ErrMsg|OutError$", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
-		static readonly Regex nameRegex = new Regex(@"Name([A-Z]|$)|^ModuleID$|^Path$", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
+		static readonly Regex nameRegex = new Regex(@"(Name|Str)(?=[A-Z]|$)|^ModuleID$|^Path$|^Ident$", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
 		static readonly Regex ignoreEnumRegex = new Regex(@"^[a-z\d_]+$", RegexOptions.Compiled | RegexOptions.Singleline);
 
 		public LLVMVisitor(ASTProcessor processor) : base(processor) {
@@ -38,6 +38,18 @@ namespace LLVM.CodeGen {
 			}
 			if (function.ReturnType.Name == "bool") {
 				function.ReturnAttrs = new[] { "MarshalAs(UnmanagedType.Bool)" };
+				return;
+			}
+			if (function.Name == "LLVMCreateMessage") {
+				function.ReturnType = new TypeDefinition { Name = "NativeString" };
+				return;
+			}
+			if (function.ReturnType.Name == "byte"
+				&& function.ReturnType.Modifies.Count == 1
+				&& function.ReturnType.Modifies[0] == TypeDefinition.ModifyType.ConstPointer) {
+				function.ReturnType = new TypeDefinition { Name = "string" };
+				function.ReturnAttrs = new[] { "MarshalAs(UnmanagedType.LPStr)" };
+				return;
 			}
 		}
 
@@ -50,6 +62,7 @@ namespace LLVM.CodeGen {
 				&& param.Modify == ParamDefinition.ModifyType.None) {
 				param.Type = new TypeDefinition { Name = "NativeString" };
 				param.Modify = ParamDefinition.ModifyType.Out;
+				return;
 			}
 			if (param.Type.Name == "byte"
 				&& param.Type.Modifies.Count == 1
@@ -58,9 +71,30 @@ namespace LLVM.CodeGen {
 				&& param.Modify == ParamDefinition.ModifyType.None) {
 				param.Type = new TypeDefinition { Name = "string" };
 				param.Attrs = new[] { "MarshalAs(UnmanagedType.LPStr)" };
+				return;
 			}
 			if (param.Type.Name == "bool") {
 				param.Attrs = new[] { "MarshalAs(UnmanagedType.Bool)" };
+				return;
+			}
+			if (function.Name == "LLVMCreateMessage") {
+				if (param.Type.Name == "byte"
+				&& param.Type.Modifies.Count == 1
+				&& param.Type.Modifies[0] == TypeDefinition.ModifyType.ConstPointer
+				&& param.Modify == ParamDefinition.ModifyType.None) {
+					param.Type = new TypeDefinition { Name = "string" };
+					param.Attrs = new[] { "MarshalAs(UnmanagedType.LPStr)" };
+				}
+				return;
+			}
+			if (function.Name == "LLVMDisposeMessage") {
+				if (param.Type.Name == "byte"
+				&& param.Type.Modifies.Count == 1
+				&& param.Type.Modifies[0] == TypeDefinition.ModifyType.Pointer
+				&& param.Modify == ParamDefinition.ModifyType.None) {
+					param.Type = new TypeDefinition { Name = "NativeString" };
+				}
+				return;
 			}
 		}
 
