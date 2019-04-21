@@ -19,5 +19,15 @@ namespace LLVM.CodeGen {
 				function.CSharpName = function.CSharpName.Substring(4);
 			}
 		}
+
+		protected override void RenameEnum(EnumDefinition @enum) {
+			if (@enum.Items.All(item => item.Name.StartsWith("LLVM"))) {
+				foreach (var item in @enum.Items) {
+					item.Name = item.Name.Substring(4);
+				}
+			}
+
+			base.RenameEnum(@enum);
+		}
 	}
 }

@@ -13,7 +13,7 @@ namespace LLVM.CodeGen {
 		static readonly Regex getFunctionRegex = new Regex(@"^LLVM(Get|Parse|Create|Find)", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
 		static readonly Regex outParamRegex = new Regex(@"^Out[A-Z]", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
 		static readonly Regex errorRegex = new Regex(@"^(Out|Error)Message|ErrMsg|OutError$", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
-		static readonly Regex nameRegex = new Regex(@"(Name|Str)(?=[A-Z]|$)|^ModuleID$|^Path$|^Ident$", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
+		static readonly Regex nameRegex = new Regex(@"(Name|Str)(?=[A-Z]|$)|^(ModuleID|Path|Ident|Triple)$", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
 		static readonly Regex ignoreEnumRegex = new Regex(@"^[a-z\d_]+$", RegexOptions.Compiled | RegexOptions.Singleline);
 
 		public LLVMVisitor(ASTProcessor processor) : base(processor) {
@@ -40,13 +40,25 @@ namespace LLVM.CodeGen {
 				function.ReturnAttrs = new[] { "MarshalAs(UnmanagedType.Bool)" };
 				return;
 			}
-			if (function.Name == "LLVMCreateMessage") {
-				function.ReturnType = new TypeDefinition { Name = "NativeString" };
-				return;
+			switch (function.Name) {
+				case "LLVMCreateMessage":
+					function.Params[0].Type = new TypeDefinition { Name = "string" };
+					function.Params[0].Attrs = new[] { "MarshalAs(UnmanagedType.LPStr)" };
+					function.ReturnType = new TypeDefinition { Name = "NativeString" };
+					return;
+				case "LLVMDisposeMessage":
+					function.Params[0].Type = new TypeDefinition { Name = "NativeString" };
+					return;
+				case "LLVMGetFunctionCallConv":
+					function.ReturnType = new TypeDefinition { Name = "LLVMCallConv" };
+					return;
+				case "LLVMSetFunctionCallConv":
+					function.Params[1].Type = new TypeDefinition { Name = "LLVMCallConv" };
+					return;
 			}
 			if (function.ReturnType.Name == "byte"
 				&& function.ReturnType.Modifies.Count == 1
-				&& function.ReturnType.Modifies[0] == TypeDefinition.ModifyType.ConstPointer) {
+				&& (function.ReturnType.Modifies[0] == TypeDefinition.ModifyType.ConstPointer || function.ReturnType.Modifies[0] == TypeDefinition.ModifyType.Pointer)) {
 				function.ReturnType = new TypeDefinition { Name = "string" };
 				function.ReturnAttrs = new[] { "MarshalAs(UnmanagedType.LPStr)" };
 				return;
@@ -64,36 +76,16 @@ namespace LLVM.CodeGen {
 				param.Modify = ParamDefinition.ModifyType.Out;
 				return;
 			}
-			if (param.Type.Name == "byte"
-				&& param.Type.Modifies.Count == 1
-				&& param.Type.Modifies[0] == TypeDefinition.ModifyType.ConstPointer
-				&& nameRegex.IsMatch(param.Name)
-				&& param.Modify == ParamDefinition.ModifyType.None) {
-				param.Type = new TypeDefinition { Name = "string" };
-				param.Attrs = new[] { "MarshalAs(UnmanagedType.LPStr)" };
-				return;
-			}
 			if (param.Type.Name == "bool") {
 				param.Attrs = new[] { "MarshalAs(UnmanagedType.Bool)" };
 				return;
 			}
-			if (function.Name == "LLVMCreateMessage") {
-				if (param.Type.Name == "byte"
+			if (param.Type.Name == "byte"
 				&& param.Type.Modifies.Count == 1
-				&& param.Type.Modifies[0] == TypeDefinition.ModifyType.ConstPointer
+				&& (param.Type.Modifies[0] == TypeDefinition.ModifyType.ConstPointer || param.Type.Modifies[0] == TypeDefinition.ModifyType.Pointer)
 				&& param.Modify == ParamDefinition.ModifyType.None) {
-					param.Type = new TypeDefinition { Name = "string" };
-					param.Attrs = new[] { "MarshalAs(UnmanagedType.LPStr)" };
-				}
-				return;
-			}
-			if (function.Name == "LLVMDisposeMessage") {
-				if (param.Type.Name == "byte"
-				&& param.Type.Modifies.Count == 1
-				&& param.Type.Modifies[0] == TypeDefinition.ModifyType.Pointer
-				&& param.Modify == ParamDefinition.ModifyType.None) {
-					param.Type = new TypeDefinition { Name = "NativeString" };
-				}
+				param.Type = new TypeDefinition { Name = "string" };
+				param.Attrs = new[] { "MarshalAs(UnmanagedType.LPStr)" };
 				return;
 			}
 		}

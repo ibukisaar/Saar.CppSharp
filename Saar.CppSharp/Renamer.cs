@@ -8,9 +8,26 @@ using System.Threading.Tasks;
 namespace Saar.CppSharp {
 	public class Renamer {
 		public ASTProcessor Processor { get; }
+		public bool CanRemoveCommonPrefix { get; set; } = true;
 
 		public Renamer(ASTProcessor processor) {
 			Processor = processor;
+		}
+
+		public static void RemoveCommonPrefix(Definitions.EnumDefinition @enum) {
+			if (@enum.Items.Count == 0) return;
+			var fieldNames = @enum.Items.Select(item => NamedTool.SplitWord(item.Name)).ToArray();
+			int commonCount = 0;
+			while (true) {
+				if (commonCount >= fieldNames[0].Length) break;
+				if (fieldNames.Skip(1).Any(names => commonCount >= names.Length || names[commonCount] != fieldNames[0][commonCount])) break;
+				commonCount++;
+			}
+			for (int i = 0; i < @enum.Items.Count; i++) {
+				var csharpName = NamedTool.ToCamelNamed(fieldNames[i].Skip(commonCount));
+				if (char.IsDigit(csharpName[0])) csharpName = "_" + csharpName;
+				@enum.Items[i].CSharpName = csharpName;
+			}
 		}
 
 		internal void RenameAll() {
@@ -38,20 +55,7 @@ namespace Saar.CppSharp {
 		protected virtual void RenameEnum(Definitions.EnumDefinition @enum) {
 			if (@enum.CSharpName != null) return;
 			@enum.CSharpName = @enum.Name;
-			if (@enum.Items.Count == 0) return;
-			var fieldNames = @enum.Items.Select(item => NamedTool.SplitWord(item.Name)).ToArray();
-			int commonCount = 0;
-			while (true) {
-				if (commonCount >= fieldNames[0].Length) break;
-				if (fieldNames.Skip(1).Any(names => commonCount >= names.Length || names[commonCount] != fieldNames[0][commonCount])) break;
-				commonCount++;
-			}
-			for (int i = 0; i < @enum.Items.Count; i++) {
-				var csharpName = NamedTool.ToCamelNamed(fieldNames[i].Skip(commonCount));
-				if (char.IsDigit(csharpName[0])) csharpName = "_" + csharpName;
-				@enum.Items[i].CSharpName = csharpName;
-			}
-
+			if (CanRemoveCommonPrefix) RemoveCommonPrefix(@enum);
 			foreach (var item in @enum.Items) {
 				RenameEnumItem(@enum, item);
 			}
